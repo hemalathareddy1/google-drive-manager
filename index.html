@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Drive Browser</title>
+
+    <!-- ✅ Load Google API -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+      // Initialize GAPI when loaded
+      function initGapi() {
+        gapi.load("client:auth2", () => {
+          console.log("✅ Google API client loaded");
+        });
+      }
+    </script>
+  </head>
+  <body onload="initGapi()">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
