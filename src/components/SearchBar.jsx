@@ -1,6 +1,6 @@
 import "./SearchBar.css";
 
-function SearchBar({ query, setQuery, onSearchClick }) {
+function SearchBar({ query, setQuery, onSearchClick, onResetClick }) {
   return (
     <div className="search-bar">
       <input
@@ -12,8 +12,16 @@ function SearchBar({ query, setQuery, onSearchClick }) {
       <button className="search-btn" onClick={onSearchClick}>
         Search
       </button>
+      <button
+        className="search-btn"
+        style={{ backgroundColor: "#718096" }}
+        onClick={onResetClick}
+      >
+        Reset
+      </button>
     </div>
   );
 }
 
 export default SearchBar;
+

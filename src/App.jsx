@@ -2,43 +2,25 @@ import { useEffect, useState } from "react";
 import Dashboard from "./components/Dashboard";
 import FileGrid from "./components/FileGrid";
 import SearchBar from "./components/SearchBar";
-import {
-  authenticate,
-  initClient,
-  listFiles,
-  uploadFile,
-  deleteFile,
-} from "./services/googleDriveAPI";
+import { fileService } from "./services/fileService";
 import "./App.css";
 
 function App() {
   const [files, setFiles] = useState([]);
   const [filteredFiles, setFilteredFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [selectedFileId, setSelectedFileId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        await initClient();
-        await authenticate();
-        const data = await listFiles();
-        setFiles(data);
-        setFilteredFiles(data);
-      } catch (err) {
-        console.error("Initialization error:", err);
-        setError(err.message || "Initialization failed");
-      } finally {
-        setLoading(false);
-      }
+    const loadFiles = async () => {
+      const data = await fileService.getFiles();
+      setFiles(data);
+      setFilteredFiles(data);
     };
-    load();
+    loadFiles();
   }, []);
 
-  // Handle file search when button is clicked
+  // Search
   const handleSearchClick = () => {
     const q = (searchQuery || "").toLowerCase();
     const filtered = files.filter(
@@ -49,44 +31,34 @@ function App() {
     setFilteredFiles(filtered);
   };
 
+  // Reset search
+  const handleResetClick = () => {
+    setSearchQuery("");
+    setFilteredFiles(files);
+  };
+
+  // Upload
   const handleUpload = async (event) => {
     const uploadedFiles = event.target.files;
     if (!uploadedFiles || uploadedFiles.length === 0) return;
 
-    setLoading(true);
-    try {
-      for (let file of uploadedFiles) {
-        await uploadFile(file);
-      }
-      const data = await listFiles();
-      setFiles(data);
-      setFilteredFiles(data);
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError("File upload failed.");
-    } finally {
-      setLoading(false);
+    for (let file of uploadedFiles) {
+      const newFile = await fileService.addFile(file);
+      setFiles((prev) => [newFile, ...prev]);
+      setFilteredFiles((prev) => [newFile, ...prev]);
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedFileId) {
+  // Delete
+  const handleDelete = async (fileId) => {
+    if (!fileId) {
       alert("Please select a file to delete.");
       return;
     }
-    setLoading(true);
-    try {
-      await deleteFile(selectedFileId);
-      const data = await listFiles();
-      setFiles(data);
-      setFilteredFiles(data);
-      setSelectedFileId(null);
-    } catch (err) {
-      console.error("Delete error:", err);
-      setError("File deletion failed.");
-    } finally {
-      setLoading(false);
-    }
+    await fileService.deleteFile(fileId);
+    setFiles((prev) => prev.filter((f) => f.id !== fileId));
+    setFilteredFiles((prev) => prev.filter((f) => f.id !== fileId));
+    setSelectedFileId(null);
   };
 
   return (
@@ -97,6 +69,7 @@ function App() {
         query={searchQuery}
         setQuery={setSearchQuery}
         onSearchClick={handleSearchClick}
+        onResetClick={handleResetClick}
       />
 
       <div className="buttons">
@@ -110,16 +83,14 @@ function App() {
         <button onClick={() => document.getElementById("fileUpload").click()}>
           Upload File
         </button>
-        <button onClick={handleDelete}>Delete File</button>
+        <button onClick={() => handleDelete(selectedFileId)}>Delete File</button>
       </div>
-
-      {loading && <div className="spinner">Loading files</div>}
-      {error && <div className="status error">Error: {error}</div>}
 
       <FileGrid
         files={filteredFiles}
         selectedFileId={selectedFileId}
         onSelectFile={setSelectedFileId}
+        onDelete={handleDelete}
       />
     </div>
   );
